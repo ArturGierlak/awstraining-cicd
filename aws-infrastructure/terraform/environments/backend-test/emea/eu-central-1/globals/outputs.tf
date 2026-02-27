@@ -3,7 +3,7 @@ output "hub" {
 }
 
 output "account_id" {
-  value = "<<ACCOUNT_ID>>"
+  value = "320746717615"
 }
 
 output "availability_zones" {
@@ -16,18 +16,18 @@ output "availability_zones" {
 
 output "backend_service_deployment_desired_task_count" {
   description = "Desired Fargate tasks in cluster"
-  value = 3
+  value       = 3
 }
 
 output "endpoints" {
   value = {
-    "ssm": "com.amazonaws.eu-central-1",
-    "logs": "com.amazonaws.eu-central-1",
-    "ecr.api": "com.amazonaws.eu-central-1",
-    "ecr.dkr": "com.amazonaws.eu-central-1",
-    "sts": "com.amazonaws.eu-central-1",
-    "secretsmanager": "com.amazonaws.eu-central-1",
-    "sts": "com.amazonaws.eu-central-1",
-    "ecs": "com.amazonaws.eu-central-1"
+    "ssm" : "com.amazonaws.eu-central-1",
+    "logs" : "com.amazonaws.eu-central-1",
+    "ecr.api" : "com.amazonaws.eu-central-1",
+    "ecr.dkr" : "com.amazonaws.eu-central-1",
+    "sts" : "com.amazonaws.eu-central-1",
+    "secretsmanager" : "com.amazonaws.eu-central-1",
+    "sts" : "com.amazonaws.eu-central-1",
+    "ecs" : "com.amazonaws.eu-central-1"
   }
 }
