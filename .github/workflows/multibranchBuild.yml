@@ -89,6 +89,10 @@ jobs:
             cluster: ${{ env.CLUSTER_NAME }}
             wait-for-service-stability: true
 
+      - name: Run smoke tests
+        if: ${{ !inputs.skipSmokeTests }}
+        run: mvn test
+
  pipelinePassed:
     runs-on: ubuntu-latest
     needs: buildTestDeploy
