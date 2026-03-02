@@ -10,11 +10,18 @@ on:
      - bugfix/*
  workflow_dispatch:
    inputs:
-     skipSmokeTests:
-       description: Should skip smoke tests?
-       type: boolean
-       required: false
-       default: false
+       skipSmokeTests:
+        description: Should skip smoke tests?
+        type: boolean
+        required: false
+        default: false
+
+       hubEnv:
+        description: Select target hub and stage
+        required: true
+        type: choice
+        options:
+          - 'BACKEND_EMEA_TEST'
 
 jobs:
  properties:
