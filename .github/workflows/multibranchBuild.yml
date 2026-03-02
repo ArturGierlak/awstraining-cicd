@@ -1,32 +1,91 @@
-#name: Multibranch pipeline
-#run-name: Multibranch ${{ github.head_ref || github.ref_name }}
-#
-#on:
-#  push:
-#    branches:
-#      - main
-#      - release/*
-#      - feature/*
-#      - bugfix/*
-#  workflow_dispatch:
-#    inputs:
-#      skipSmokeTests:
-#        description: Should skip smoke tests?
-#        type: boolean
-#        required: false
-#        default: false
-#
-#jobs:
-#  properties:
-#    #    TODO call datacenterMap reusable workflow to get AWS_ACCOUNT, PROFILE, REGION and other variables based on hubEnv input
-#
-#  buildTestDeploy:
-#    #    TODO Checkout, JDK 17 setup, Maven setup, Build with JaCoCo, Configure AWS credentials, Login to Amazon ECR, Push image to Amazon ECR, Deploy Amazon ECS task definition, Run smoke tests if not skipped
-#
-#  pipelinePassed:
-#    runs-on: ubuntu-latest
-#    needs: buildTestDeploy
-#    steps:
-#      - name: All passed
-#        run: |
-#          echo "All steps have passed."
+name: Multibranch pipeline
+run-name: Multibranch ${{ github.head_ref || github.ref_name }}
+
+on:
+ push:
+   branches:
+     - main
+     - release/*
+     - feature/*
+     - bugfix/*
+ workflow_dispatch:
+   inputs:
+     skipSmokeTests:
+       description: Should skip smoke tests?
+       type: boolean
+       required: false
+       default: false
+
+jobs:
+ properties:
+   #    TODO call datacenterMap reusable workflow to get AWS_ACCOUNT, PROFILE, REGION and other variables based on hubEnv input
+    uses: ./.github/workflows/datacenterMap.yml
+    with:
+      hubEnv: ${{ inputs.hubEnv }}
+    secrets: inherit
+
+ buildTestDeploy:
+    #    TODO Checkout, JDK 17 setup, Maven setup, Build with JaCoCo, Configure AWS credentials, Login to Amazon ECR, Push image to Amazon ECR, Deploy Amazon ECS task definition, Run smoke tests if not skipped
+    runs-on: ubuntu-latest
+    needs: properties
+    env:
+      AWS_ACCOUNT: ${{ needs.properties.outputs.AWS_ACCOUNT }}
+      AWS_PROFILE: ${{ needs.properties.outputs.PROFILE }}
+      AWS_KEY: ${{ secrets[format('{0}_AWS_KEY', inputs.hubEnv)] }}
+      AWS_SECRET: ${{ secrets[format('{0}_AWS_SECRET', inputs.hubEnv)] }}
+      AWS_REGION: ${{ needs.properties.outputs.REGION }}
+      CLUSTER_NAME: ${{ needs.properties.outputs.CLUSTER_NAME }}
+      SERVICE_NAME: ${{ needs.properties.outputs.SERVICE_NAME }}
+      TASK_NAME: ${{ needs.properties.outputs.TASK_NAME }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+            # Disabling shallow clone is recommended for improving relevancy of reporting
+            fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+            distribution: 'temurin'
+            java-version: '17'
+
+      - name: Build with Maven and Jacoco
+        run: mvn clean verify
+
+      - name: Configure AWS profile
+        run: |
+            mkdir -p ~/.aws
+            echo "[${{ env.AWS_PROFILE }}]" > ~/.aws/credentials
+            echo "aws_access_key_id = ${{ env.AWS_KEY }}" >> ~/.aws/credentials
+            echo "aws_secret_access_key = ${{ env.AWS_SECRET }}" >> ~/.aws/credentials
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ env.TASK_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+            task-definition: assembly-fargate/src/main/resources/fargate/BACKEND_EMEA_TEST/task.json
+            service: ${{ env.SERVICE_NAME }}
+            cluster: ${{ env.CLUSTER_NAME }}
+            wait-for-service-stability: true
+
+ pipelinePassed:
+    runs-on: ubuntu-latest
+    needs: buildTestDeploy
+    steps:
+     -  name: All passed
+        run: |
+         echo "All steps have passed."
