@@ -7,8 +7,8 @@ data "aws_iam_role" "loadtest_ecs_execution_role" {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "fargate_capacity_provider" {
-  cluster_name = aws_ecs_cluster.ecs_loadtest_cluster.name
-  capacity_providers = [ "FARGATE" ]
+  cluster_name       = aws_ecs_cluster.ecs_loadtest_cluster.name
+  capacity_providers = ["FARGATE"]
 }
 
 # ECS Cluster for loadtest
@@ -28,13 +28,13 @@ resource "aws_ecs_service" "ecs_loadtest_service" {
   cluster         = aws_ecs_cluster.ecs_loadtest_cluster.id
   task_definition = aws_ecs_task_definition.ecs_loadtest_task.arn
 
-  desired_count   = var.service_deployment_desired_task_count
-  launch_type = "FARGATE"
+  desired_count = var.service_deployment_desired_task_count
+  launch_type   = "FARGATE"
 
   # configuration needed for awsvpc network mode for tasks
   network_configuration {
-    subnets = var.subnets
-    security_groups = [ var.sg_ecs_backend_id ]
+    subnets          = var.subnets
+    security_groups  = [var.sg_ecs_backend_id]
     assign_public_ip = false
   }
   tags = var.common_tags
@@ -57,18 +57,19 @@ resource "aws_cloudwatch_log_group" "ecs_loadtest_log_group" {
 resource "aws_ecs_task_definition" "ecs_loadtest_task" {
   family = var.name
   container_definitions = templatefile("../../../templates/loadtest-task.json.tpl", {
-    name = "backend-loadtest"
-    image = "${var.ecr_loadtest_url}:${var.ecr_loadtest_image_tag}"
-    log_group = var.name
-    load_test_url = var.load_test_url
+    name                         = "backend-loadtest"
+    image                        = "${var.ecr_loadtest_url}:${var.ecr_loadtest_image_tag}"
+    log_group                    = var.name
+    load_test_url                = var.load_test_url
     load_test_result_bucket_name = var.load_test_result_bucket_name
+    secret_arn                   = var.secret_arn
   })
-  network_mode = "awsvpc"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  execution_role_arn = data.aws_iam_role.loadtest_ecs_execution_role.arn
-  task_role_arn = data.aws_iam_role.loadtest_ecs_role.arn
-  cpu = var.ecs_loadtest_fargate_cpu
-  memory = var.ecs_loadtest_fargate_memory
+  execution_role_arn       = data.aws_iam_role.loadtest_ecs_execution_role.arn
+  task_role_arn            = data.aws_iam_role.loadtest_ecs_role.arn
+  cpu                      = var.ecs_loadtest_fargate_cpu
+  memory                   = var.ecs_loadtest_fargate_memory
 
   tags = merge(
     var.common_tags,

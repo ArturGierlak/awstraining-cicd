@@ -45,6 +45,10 @@ variable "load_test_url" {
   description = "URL for Load Tests"
 }
 
+variable "secret_arn" {
+  description = "Secrets arn needed for task definition"
+}
+
 variable "environment" {}
 
 
