@@ -49,6 +49,12 @@
           "value": "1"
         }
     ],
+    "secrets": [
+        {
+           "valueFrom": "${secret_arn}",
+           "name": "SPRING_APPLICATION_JSON"
+        }
+    ],
     "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

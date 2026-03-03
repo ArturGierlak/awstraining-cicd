@@ -44,7 +44,7 @@
       ],
       "secrets": [
         {
-          "valueFrom": "${secret_arn}",
+          "valueFrom": "<<TODO SECRETS ARN>>",
           "name": "SPRING_APPLICATION_JSON"
         }
       ],
