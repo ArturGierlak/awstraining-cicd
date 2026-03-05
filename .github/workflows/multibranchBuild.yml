@@ -75,7 +75,7 @@ jobs:
       - name: Build, tag, and push docker image to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ env.TASK_NAME }}
+          REPOSITORY: ${{ env.SERVICE_NAME }}
           IMAGE_TAG: latest
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
@@ -91,7 +91,7 @@ jobs:
 
       - name: Run smoke tests
         if: ${{ !inputs.skipSmokeTests }}
-        run: mvn test
+        run: mvn test 
 
  pipelinePassed:
     runs-on: ubuntu-latest
